@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  (function() {
+    const pwd = prompt("🚪 Please enter the teacher dashboard password:");
+    if (pwd !== "sudosudo") {
+      alert("❌ Incorrect password – redirecting you now.");
+      window.location.href = "https://www.google.com"; 
+    }
+    // If correct, the rest of the page loads normally
+  })();
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Classroom Points Tracker</title>
@@ -62,7 +72,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, query, getDocs, onSnapshot, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     // Firebase init
-    const app = initializeApp({ apiKey: "AIzaSyDNNuSuHAqpms8UvOTCDmrEnXN648eTkxo", authDomain: "classroompoints.firebaseapp.com", projectId: "classroompoints", storageBucket: "classroompoints.firebasestorage.app", messagingSenderId: "176805498618", appId: "1:176805498618:web:2071d90825bafb78154343", measurementId: "G-BLJYG5JYQW" });
+    const app = initializeApp({ apiKey: "AIzaSyB17jY--gDsic8lCJ-jun1BdLFW_vz-tBI", authDomain: "classroompoints.firebaseapp.com", projectId: "classroompoints", storageBucket: "classroompoints.firebasestorage.app", messagingSenderId: "176805498618", appId: "1:176805498618:web:2071d90825bafb78154343", measurementId: "G-BLJYG5JYQW" });
     const db = getFirestore(app);
     let currentClass = null, unsubscribeStudents = null;
     const sidebar = document.getElementById('sidebar'), content = document.querySelector('.content'), toggleBtn = document.getElementById('sidebarToggle');
