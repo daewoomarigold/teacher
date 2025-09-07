@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-  (function() {
-    const pwd = prompt("🚪 Please enter the teacher dashboard password:");
-    if (pwd !== "sudosudo") {
-      alert("❌ Incorrect password – redirecting you now.");
-      window.location.href = "https://www.google.com"; 
-    }
-    // If correct, the rest of the page loads normally
-  })();
-</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Classroom Points Tracker</title>
@@ -53,6 +43,10 @@
   <div id="sidebar">
     <button id="sidebarToggle">‹</button>
     <div class="controls">
+      <div id="authStatus" style="margin-bottom:0.5rem;font-size:0.9rem;opacity:0.85">Signed out</div>
+      <button id="btnSignIn">Sign in with Google</button>
+      <button id="btnSignOut" disabled>Sign out</button>
+      <hr style="border:none;border-top:1px solid #333;margin:0.75rem 0" />
       <label for="classDropdown">Select Class:</label>
       <select id="classDropdown"></select>
       <button onclick="resetDailyPoints()">🔁 Reset Daily</button>
@@ -71,9 +65,22 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, query, getDocs, onSnapshot, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     // Firebase init
+    if (location.protocol === "file:") console.warn("Firebase Auth may not work on file://. Serve over http:// or https://");
     const app = initializeApp({ apiKey: "AIzaSyB17jY--gDsic8lCJ-jun1BdLFW_vz-tBI", authDomain: "classroompoints.firebaseapp.com", projectId: "classroompoints", storageBucket: "classroompoints.firebasestorage.app", messagingSenderId: "176805498618", appId: "1:176805498618:web:2071d90825bafb78154343", measurementId: "G-BLJYG5JYQW" });
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    function isSignedIn(){ return !!auth.currentUser; }
+    function updateAuthUI(user){
+      const s = document.getElementById("authStatus");
+      const inBtn = document.getElementById("btnSignIn");
+      const outBtn = document.getElementById("btnSignOut");
+      if (user){ s.textContent = `Signed in as ${user.displayName || user.email || "User"}`; inBtn.disabled = true; outBtn.disabled = false; }
+      else { s.textContent = "Signed out"; inBtn.disabled = false; outBtn.disabled = true; }
+    }
+    onAuthStateChanged(auth, (u)=>{ updateAuthUI(u); if (u) { populateClassDropdown(); } });
     let currentClass = null, unsubscribeStudents = null;
     const sidebar = document.getElementById('sidebar'), content = document.querySelector('.content'), toggleBtn = document.getElementById('sidebarToggle');
     let isCollapsed = false;
@@ -83,6 +90,13 @@
       content.classList.toggle('collapsed', isCollapsed);
       toggleBtn.textContent = isCollapsed ? '›' : '‹';
     });
+    document.getElementById("btnSignIn").addEventListener("click", async () => {
+      try { await signInWithPopup(auth, provider); showToast("Signed in."); } catch(e){ console.error(e); showToast("Sign-in failed.", "Retry", ()=>document.getElementById("btnSignIn").click()); }
+    });
+    document.getElementById("btnSignOut").addEventListener("click", async () => {
+      try { await signOut(auth); showToast("Signed out."); } catch(e){ console.error(e); showToast("Sign-out failed."); }
+    });
+
     function showToast(msg, actionText, actionFn, duration = 5000) {
       const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast';
       t.innerHTML = `<span>${msg}</span>${actionText ? `<button>${actionText}</button>` : ''}`;
@@ -90,6 +104,7 @@
       c.appendChild(t); setTimeout(() => c.contains(t) && c.removeChild(t), duration);
     }
     async function populateClassDropdown() {
+      if (!isSignedIn()) { showToast("Sign in to load classes."); return; }
       const dd = document.getElementById('classDropdown'); dd.innerHTML = '';
       try { const snap = await getDocs(collection(db, 'classes'));
         snap.forEach(ds => { const o = document.createElement('option'); o.value = ds.id; o.text = ds.id; dd.appendChild(o); });
@@ -127,35 +142,35 @@
       });
       updateStats(students);
     }
-    async function addPoint(className, studentId) {
+    async function addPoint(className, studentId) { if (!isSignedIn()) return showToast("Sign in first.");
       const ref = doc(db, 'classes', className, 'students', studentId); let data;
-      try { const s = await getDoc(ref); data = s.exists() ? s.data() : {}; const pts = data.points || { daily:0, total:0 }; await setDoc(ref, { ...data, points: { daily: pts.daily+1, total: pts.total+1 } }); }
+      try { const s = await getDoc(ref); data = s.exists() ? s.data() : {}; const pts = data.points || { daily:0, total:0 }; await setDoc(ref, { ...data, points: { daily: pts.daily+1, total: pts.total+1 } }, { merge: true }); }
       catch (e) { console.error(e); showToast(`Couldn't add point for ${data?.name||studentId}.`, 'Retry', () => addPoint(className, studentId)); }
     }
-    async function resetStudentDaily(className, studentId) { const ref = doc(db, 'classes', className, 'students', studentId); let data;
-      try { const s = await getDoc(ref); if (!s.exists()) return; data = s.data(); await setDoc(ref, { ...data, points: { daily:0, total:data.points.total } }); }
+    async function resetStudentDaily(className, studentId) { if (!isSignedIn()) return showToast("Sign in first."); const ref = doc(db, 'classes', className, 'students', studentId); let data;
+      try { const s = await getDoc(ref); if (!s.exists()) return; data = s.data(); await setDoc(ref, { ...data, points: { daily:0, total:data.points.total } }, { merge: true }); }
       catch (e) { console.error(e); showToast(`Couldn't reset daily for ${data?.name||studentId}.`, 'Retry', () => resetStudentDaily(className, studentId)); }
     }
-    async function resetStudentTotal(className, studentId) { const ref = doc(db, 'classes', className, 'students', studentId); let data;
-      try { const s = await getDoc(ref); if (!s.exists()) return; data = s.data(); await setDoc(ref, { ...data, points: { daily:data.points.daily, total:0 } }); }
+    async function resetStudentTotal(className, studentId) { if (!isSignedIn()) return showToast("Sign in first."); const ref = doc(db, 'classes', className, 'students', studentId); let data;
+      try { const s = await getDoc(ref); if (!s.exists()) return; data = s.data(); await setDoc(ref, { ...data, points: { daily:data.points.daily, total:0 } }, { merge: true }); }
       catch (e) { console.error(e); showToast(`Couldn't reset total for ${data?.name||studentId}.`, 'Retry', () => resetStudentTotal(className, studentId)); }
     }
-    async function resetDailyPoints() { if (!currentClass) return showToast('Load a class first.'); if (!confirm(`Reset ALL daily for ${currentClass}?`)) return;
+    async function resetDailyPoints() { if (!isSignedIn()) return showToast("Sign in first."); if (!currentClass) return showToast('Load a class first.'); if (!confirm(`Reset ALL daily for ${currentClass}?`)) return;
       try { const snaps = await getDocs(collection(db, 'classes', currentClass, 'students')); await Promise.all(snaps.docs.map(ds => setDoc(doc(db, 'classes', currentClass, 'students', ds.id), { ...ds.data(), points:{ daily:0, total:ds.data().points.total } }))); showToast('All daily points reset.'); }
       catch (e) { console.error(e); showToast("Couldn't reset all daily.", 'Retry', resetDailyPoints); }
     }
-    async function resetTotalPoints() { if (!currentClass) return showToast('Load a class first.'); if (!confirm(`Reset ALL total for ${currentClass}?`)) return;
+    async function resetTotalPoints() { if (!isSignedIn()) return showToast("Sign in first."); if (!currentClass) return showToast('Load a class first.'); if (!confirm(`Reset ALL total for ${currentClass}?`)) return;
       try { const snaps = await getDocs(collection(db, 'classes', currentClass, 'students')); await Promise.all(snaps.docs.map(ds => setDoc(doc(db, 'classes', currentClass, 'students', ds.id), { ...ds.data(), points:{ daily:ds.data().points.daily, total:0 } }))); showToast('All total points reset.'); }
       catch (e) { console.error(e); showToast("Couldn't reset all total.", 'Retry', resetTotalPoints); }
     }
-    async function addDailyPointToAll() { if (!currentClass) return showToast('Load a class first.'); if (!confirm(`+1 daily to ALL in ${currentClass}?`)) return;
-      try { const snaps = await getDocs(collection(db, 'classes', currentClass, 'students')); await Promise.all(snaps.docs.map(ds => { const d = ds.data(), pts = d.points||{ daily:0, total:0 }; return setDoc(doc(db, 'classes', currentClass, 'students', ds.id), { ...d, points:{ daily: pts.daily+1, total: pts.total+1 } }); })); showToast('+1 to all done.'); }
+    async function addDailyPointToAll() { if (!isSignedIn()) return showToast("Sign in first."); if (!currentClass) return showToast('Load a class first.'); if (!confirm(`+1 daily to ALL in ${currentClass}?`)) return;
+      try { const snaps = await getDocs(collection(db, 'classes', currentClass, 'students')); await Promise.all(snaps.docs.map(ds => { const d = ds.data(), pts = d.points||{ daily:0, total:0 }; return setDoc(doc(db, 'classes', currentClass, 'students', ds.id), { ...d, points:{ daily: pts.daily+1, total: pts.total+1 } }, { merge: true }); })); showToast('+1 to all done.'); }
       catch (e) { console.error(e); showToast("Couldn't add to all.", 'Retry', addDailyPointToAll); }
     }
     // Expose globals
     window.toggleMenu = toggleMenu; window.addPoint = addPoint; window.resetStudentDaily = resetStudentDaily; window.resetStudentTotal = resetStudentTotal; window.resetDailyPoints = resetDailyPoints; window.resetTotalPoints = resetTotalPoints; window.addDailyPointToAll = addDailyPointToAll;
     // Initialize
-    populateClassDropdown();
+    // populateClassDropdown(); // moved: runs after sign-in
   </script>
 </body>
 </html>
