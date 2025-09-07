@@ -68,8 +68,16 @@
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     // Firebase init
     if (location.protocol === "file:") console.warn("Firebase Auth may not work on file://. Serve over http:// or https://");
-    const app = initializeApp({ apiKey: "AIzaSyB17jY--gDsic8lCJ-jun1BdLFW_vz-tBI", authDomain: "classroompoints.firebaseapp.com", projectId: "classroompoints", storageBucket: "classroompoints.firebasestorage.app", messagingSenderId: "176805498618", appId: "1:176805498618:web:2071d90825bafb78154343", measurementId: "G-BLJYG5JYQW" });
-    const db = getFirestore(app);
+    const app = initializeApp({
+      apiKey:"AIzaSyDNNuSuHAqpms8UvOTCDmrEnXN648eTkxo",
+      authDomain:"classroompoints.firebaseapp.com",
+      projectId:"classroompoints",
+      storageBucket:"classroompoints.firebasestorage.app",
+      messagingSenderId:"176805498618",
+      appId:"1:176805498618:web:2071d90825bafb78154343",
+      measurementId:"G-BLJYG5JYQW"
+    });
+const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     function isSignedIn(){ return !!auth.currentUser; }
