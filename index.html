@@ -37,7 +37,8 @@
     #toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 300; }
     .toast { min-width: 220px; margin-bottom: 0.5rem; padding: 0.75rem 1rem; border-radius: 0.25rem; background: rgba(30,30,30,0.9); color: #FFF; display: flex; justify-content: space-between; align-items: center; }
     .toast button { background: transparent; border: none; color: #0af; cursor: pointer; margin-left: 1rem; }
-  </style>
+  #className { font-size: 1.2rem; padding: 0.4rem; }
+</style>
 </head>
 <body>
   <div id="sidebar">
@@ -49,6 +50,7 @@
       <hr style="border:none;border-top:1px solid #333;margin:0.75rem 0" />
       <label for="classDropdown">Select Class:</label>
       <select id="classDropdown"></select>
+<h2 id="classTitle" style="margin:0.5rem 0; text-align:center;"></h2>
       <button onclick="resetDailyPoints()">🔁 Reset Daily</button>
       <button onclick="resetTotalPoints()">🧹 Reset Total</button>
       <button onclick="addDailyPointToAll()">+1 to All</button>
