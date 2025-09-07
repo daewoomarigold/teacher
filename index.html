@@ -37,14 +37,14 @@
     #toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 300; }
     .toast { min-width: 220px; margin-bottom: 0.5rem; padding: 0.75rem 1rem; border-radius: 0.25rem; background: rgba(30,30,30,0.9); color: #FFF; display: flex; justify-content: space-between; align-items: center; }
     .toast button { background: transparent; border: none; color: #0af; cursor: pointer; margin-left: 1rem; }
-  #className { font-size: 1.2rem; padding: 0.4rem; }
+  #className { font-size: 0.85rem; padding: 0.35rem; max-width: 100%; }
 </style>
 </head>
 <body>
   <div id="sidebar">
     <button id="sidebarToggle">‹</button>
     <div class="controls">
-      <div id="authStatus" style="margin-bottom:0.5rem;font-size:0.9rem;opacity:0.85">Signed out</div>
+      <div id="authStatus" style="margin-bottom:0.5rem;font-size:0.9rem;opacity:0.85">Signed out</div><div id="currentClassName" style="font-size:1.1rem;font-weight:600;margin-left:1rem;"></div></div>
       <button id="btnSignIn">Sign in with Google</button>
       <button id="btnSignOut" disabled>Sign out</button>
       <hr style="border:none;border-top:1px solid #333;margin:0.75rem 0" />
@@ -58,7 +58,7 @@
   </div>
   <div class="content">
     <div id="stats">
-      <h2>Today's Points: <span id="sumDaily">0</span></h2>
+      <h2><div id="totalsRow" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;"><div>Today's Points: <span id="sumDaily">0</span></h2>
       <h2>Total Points: <span id="sumTotal">0</span></h2>
     </div>
     <div id="studentsContainer"></div>
